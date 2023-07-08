@@ -1,0 +1,54 @@
+# Select Provider
+provider "aws" {
+  region = "us-east-1"
+}
+
+resource "aws_ecs_cluster" "Terraform_cluster" {
+  name = "Apache_Cluster"
+}
+
+# Task Definition to create Services 
+resource "aws_ecs_task_definition" "Apache" {
+  family                   = "apache"
+  # Container Configues
+  container_definitions    = <<DEFINITION
+[
+  {
+    "name": "apache",
+    "image": "httpd:2.4",
+    "portMappings": [
+      {
+        "containerPort": 80,
+        "hostPort": 80
+      }
+    ]
+  }
+]
+DEFINITION
+}
+
+resource "aws_ecs_service" "service" {
+  name            = "apache-service"
+  cluster         = aws_ecs_cluster.Apache_Cluster.id
+  task_definition = aws_ecs_task_definition.Apache.arn
+
+  desired_count = 1
+
+  network_configuration {
+    subnets          = ["subnet-ID-We Want"]
+    security_groups  = ["sg-ID"]
+    assign_public_ip = true
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.target.arn
+    container_name   = "apache"
+    container_port   = 80
+  }
+}
+
+resource "aws_lb_target_group" "target" {
+  name_prefix = "apache-tg-"
+  port        = 80
+  protocol    = "HTTP"
+}
