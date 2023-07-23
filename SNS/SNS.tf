@@ -18,6 +18,6 @@ resource "aws_sns_topic" "terraform_topic" {
     "requestPolicy": {
         "headerContentType": "application/json"
     }
-}
+
 EOF
 }
